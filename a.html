@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple LLM use</title>
+  <style>
+    body { font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; max-width: 500px; margin: 50px auto; }
+    #chat { border: 2px solid #473847; height: 300px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; border-radius: 10px; background-color: rgb(224, 251, 184);}
+    #input { width: 82.2%; padding: 8px; border-radius: 10px;background-color: rgb(224, 251, 184);}
+    #send { padding: 8px 15px; color: azure;background-color: rgb(246, 43, 246); border-radius: 10px; transition: background-color 0.1ms, color 0.1ms, font-size 0.1ms; }
+    #send:hover { background-color: rgb(180, 20, 180); color: white; font-size: 12px }
+    #suggestion { color: gray; font-style: italic; margin-top: 5px; min-height: 20px; }
+    .user { color: blue; margin: 5px 0; }
+    .bot { color: green; margin: 5px 0; }
+    h2{color: rgba(184, 85, 188, 0.883);}
+  </style>
+</head>
+<body>
+
+<h2>Next Word Suggestor</h2>
+<div id="chat">
+  <div class="bot">Bot: Type some text and I'll suggest the next word!</div>
+</div>
+<input type="text" id="input" placeholder="Type your message..." onkeypress="if(event.key=='Enter') sendMessage()">
+<button id="send" onclick="sendMessage()">Send</button>
+<div id="suggestion"></div>
+
+<script>
+let debounceTimer;
+let currentSuggestedWord = '';
+
+document.getElementById('input').addEventListener('keydown', function(e) {
+  if (e.key === 'Tab' && currentSuggestedWord) {
+    e.preventDefault();
+    this.value = this.value.trimEnd() + ' ' + currentSuggestedWord;
+    currentSuggestedWord = '';
+    document.getElementById('suggestion').textContent = '';
+  }
+});
+
+document.getElementById('input').addEventListener('input', function() {
+  const message = this.value.trim();
+  const suggestion = document.getElementById('suggestion');
+
+  if (!message) {
+    suggestion.textContent = '';
+    currentSuggestedWord = '';
+    return;
+  }
+
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    suggestion.textContent = 'Thinking...';
+    fetch('/suggest', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: message})
+    })
+    .then(response => response.json())
+    .then(data => {
+      currentSuggestedWord = data.response.trim().split(/\s+/)[0];
+      suggestion.textContent = 'Suggestion: ' + data.response + ' (Press Tab to append)';
+    });
+  }, 500);
+});
+
+function sendMessage() {
+  const input = document.getElementById('input');
+  const chat = document.getElementById('chat');
+  const message = input.value.trim();
+
+  if (!message) return;
+
+  chat.innerHTML += '<div class="user">You: ' + message + '</div>';
+  document.getElementById('suggestion').textContent = '';
+  input.value = '';
+
+  fetch('/suggest', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({message: message})
+  })
+  .then(response => response.json())
+  .then(data => {
+    chat.innerHTML += '<div class="bot">Bot: ' + data.response + '</div>';
+    chat.scrollTop = chat.scrollHeight;
+  });
+}
+</script>
+</body>
+</html>

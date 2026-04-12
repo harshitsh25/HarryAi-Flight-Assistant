@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="navbar">
+            <ul>
+                <li><img src="/images/Untitled.png" alt="HarryAi"></li>
+                <li>Home</li>
+                <li>About</li>
+                <li><a href="#login-terminal" class="login-btn">LOGIN</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="login-terminal" class="terminal-overlay">
+        <div class="terminal-window">
+            <div class="terminal-header">User Login</div>
+            <div class="terminal-body">
+                <label class="terminal-label" for="terminalUsername">Username</label>
+                <input type="text" id="terminalUsername" class="terminal-input" placeholder="Enter username">
+                <label class="terminal-label" for="terminalPassword">Password</label>
+                <input type="password" id="terminalPassword" class="terminal-input" placeholder="Enter password">
+                <div class="terminal-actions">
+                    <button type="submit" class="terminal-submit">Submit</button>
+                    <a href="#" class="terminal-cancel">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-widget">
+        <div class="chat-header">
+            <div class="chat-header-dot"></div>
+            <span class="chat-header-title">HarryAI Assistant</span>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-bubble bot">Hi! How can I help you today?</div>
+        </div>
+
+        <div class="chat-input-area">
+            <input
+                type="text"
+                class="chat-input"
+                id="chatInput"
+                placeholder="Ask your question here"
+                onkeypress="if(event.key==='Enter') sendMessage()"
+            />
+            <button class="send-btn" onclick="sendMessage()" title="Send">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const chat = document.getElementById('chatMessages');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Show user message
+            chat.innerHTML += '<div class="chat-bubble user">' + message + '</div>';
+            input.value = '';
+            chat.scrollTop = chat.scrollHeight;
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                chat.innerHTML += '<div class="chat-bubble bot">HarryAi: ' + data.response + '</div>';
+                chat.scrollTop = chat.scrollHeight;
+            })
+            .catch(err => {
+                chat.innerHTML += '<div class="chat-bubble bot">Error: Could not reach server.</div>';
+                chat.scrollTop = chat.scrollHeight;
+            });
+        }
+    </script>
+</body>
+</html>
